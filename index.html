@@ -10,6 +10,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            text-align: center;
             justify-content: center;
             min-height: 100vh;
             margin: 0;
@@ -48,7 +49,6 @@
             font-size: 24px;
             text-align: center;
             margin-bottom: 20px;
-            align: center;
         }
     </style>
 </head>
@@ -68,6 +68,7 @@
         const statusText = document.getElementById('status');
         const cameraSelect = document.getElementById('camera-select');
         let currentStream = null;
+        let isScanning = true; // Флаг для управления сканированием
 
         // Функция для получения списка камер
         async function getCameras() {
@@ -116,6 +117,8 @@
 
         // Функция для обработки кадров
         function tick() {
+            if (!isScanning) return; // Если сканирование приостановлено, выходим
+
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
                 const canvas = document.createElement('canvas');
                 canvas.width = video.videoWidth;
@@ -134,6 +137,13 @@
                         audioPlayer.src = code.data;
                         audioPlayer.style.display = 'block';
                         audioPlayer.play();
+
+                        // Приостанавливаем сканирование на 5 секунд
+                        isScanning = false;
+                        setTimeout(() => {
+                            isScanning = true;
+                            statusText.textContent = "Сканирование...";
+                        }, 5000); // 5 секунд задержки
                     } else {
                         statusText.textContent = "Ссылка в QR-коде не ведёт на MP3 файл.";
                     }
