@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR-код аудио плеер</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #qr-scanner {
+            margin-bottom: 20px;
+        }
+        #audio-player {
+            display: none;
+            margin-top: 20px;
+        }
+        #camera-select {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Сканируйте QR-код с ссылкой на MP3</h1>
+    <select id="camera-select"></select>
+    <video id="qr-scanner" width="300" height="200" autoplay></video>
+    <audio id="audio-player" controls>
+        Ваш браузер не поддерживает элемент <code>audio</code>.
+    </audio>
+    <p id="status">Сканирование...</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+    <script>
+        const video = document.getElementById('qr-scanner');
+        const audioPlayer = document.getElementById('audio-player');
+        const statusText = document.getElementById('status');
+        const cameraSelect = document.getElementById('camera-select');
+        let currentStream = null;
+
+        // Функция для получения списка камер
+        async function getCameras() {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            cameraSelect.innerHTML = ''; // Очищаем список
+            videoDevices.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || `Камера ${index + 1}`;
+                cameraSelect.appendChild(option);
+            });
+        }
+
+        // Функция для запуска выбранной камеры
+        async function startCamera(deviceId) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop()); // Останавливаем текущий поток
+            }
+            const constraints = {
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    facingMode: deviceId ? undefined : "environment" // По умолчанию используем заднюю камеру
+                }
+            };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                currentStream = stream;
+                requestAnimationFrame(tick);
+            } catch (err) {
+                statusText.textContent = "Ошибка доступа к камере: " + err.message;
+            }
+        }
+
+        // Обработчик изменения выбора камеры
+        cameraSelect.addEventListener('change', () => {
+            const selectedDeviceId = cameraSelect.value;
+            startCamera(selectedDeviceId);
+        });
+
+        // Инициализация
+        async function init() {
+            await getCameras(); // Получаем список камер
+            startCamera(); // Запускаем камеру по умолчанию
+        }
+
+        // Функция для обработки кадров
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+
+                if (code) {
+                    // Проверяем, что ссылка ведёт на MP3
+                    if (code.data.endsWith('.mp3')) {
+                        statusText.textContent = "QR-код распознан! Загружаем аудио...";
+                        audioPlayer.src = code.data;
+                        audioPlayer.style.display = 'block';
+                        audioPlayer.play();
+                    } else {
+                        statusText.textContent = "Ссылка в QR-коде не ведёт на MP3 файл.";
+                    }
+                } else {
+                    statusText.textContent = "Сканирование...";
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // Запуск инициализации
+        init();
+    </script>
+</body>
+</html>
