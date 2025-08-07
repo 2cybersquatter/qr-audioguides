@@ -1,171 +1,76 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR-код аудио плеер</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        #qr-scanner {
-            width: 100%;
-            max-width: 400px;
-            height: auto;
-            margin-bottom: 20px;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-        }
-        #audio-player {
-            display: none;
-            width: 100%;
-            max-width: 400px;
-            margin-top: 20px;
-        }
-        #camera-select {
-            width: 100%;
-            max-width: 400px;
-            margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        #status {
-            margin-top: 10px;
-            font-size: 16px;
-            text-align: center;
-        }
-        h1 {
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Сканируйте QR-код</h1>
-    <select id="camera-select"></select>
-    <video id="qr-scanner" autoplay playsinline></video>
-    <audio id="audio-player" controls>
-        Ваш браузер не поддерживает элемент <code>audio</code>.
-    </audio>
-    <p id="status">Загрузка...</p>
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Стартовая страница</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23007aff'/%3E%3Ctext x='50' y='60' font-size='50' text-anchor='middle' fill='white' font-family='Arial, Helvetica, sans-serif'%3ES%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar" role="banner">
+        <div class="clock" id="clock" aria-live="polite">--:--</div>
 
-    <script src="jsQR.min.js"></script>
-    <script>
-        const video = document.getElementById('qr-scanner');
-        const audioPlayer = document.getElementById('audio-player');
-        const statusText = document.getElementById('status');
-        const cameraSelect = document.getElementById('camera-select');
-        let currentStream = null;
-        let isScanning = true; // Флаг для управления сканированием
+        <div class="controls">
+          <button id="themeToggle" class="btn" title="Переключить тему" aria-label="Переключить тему">🌓</button>
 
-        // Функция для получения списка камер
-        async function getCameras() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                cameraSelect.innerHTML = '<option value="">Выберите камеру</option>';
-                videoDevices.forEach((device, index) => {
-                    const option = document.createElement('option');
-                    option.value = device.deviceId;
-                    option.text = device.label || `Камера ${index + 1}`;
-                    cameraSelect.appendChild(option);
-                });
-            } catch (err) {
-                statusText.textContent = "Ошибка при получении списка камер: " + err.message;
-            }
-        }
+          <label class="select-wrap" title="Поисковая система">
+            <span class="sr-only">Поисковая система</span>
+            <select id="searchEngine">
+              <option value="google">Google</option>
+              <option value="yandex">Яндекс</option>
+              <option value="duckduckgo">DuckDuckGo</option>
+            </select>
+          </label>
 
-        // Функция для запуска выбранной камеры
-        async function startCamera(deviceId) {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop()); // Останавливаем текущий поток
-            }
-            const constraints = {
-                video: {
-                    deviceId: deviceId ? { exact: deviceId } : undefined,
-                    facingMode: deviceId ? undefined : "environment" // По умолчанию используем заднюю камеру
-                }
-            };
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                currentStream = stream;
-                statusText.textContent = "Сканирование...";
-                requestAnimationFrame(tick);
-            } catch (err) {
-                statusText.textContent = "Ошибка доступа к камере: " + err.message;
-            }
-        }
+          <button id="setBackground" class="btn" title="Установить фон">🖼️</button>
+          <button id="clearBackground" class="btn" title="Сбросить фон">↺</button>
 
-        // Обработчик изменения выбора камеры
-        cameraSelect.addEventListener('change', () => {
-            const selectedDeviceId = cameraSelect.value;
-            startCamera(selectedDeviceId);
-        });
+          <button id="exportBtn" class="btn" title="Экспорт настроек">⤴️</button>
+          <label for="importInput" class="btn" title="Импорт настроек" tabindex="0">⤵️</label>
+          <input id="importInput" type="file" accept="application/json" hidden />
+        </div>
+      </header>
 
-        // Функция для обработки кадров
-        function tick() {
-            if (!isScanning) return; // Если сканирование приостановлено, выходим
+      <main>
+        <form id="searchForm" class="search" role="search">
+          <input id="searchInput" type="text" placeholder="Поиск или адрес" autocomplete="off" aria-label="Строка поиска" />
+          <button type="submit" class="btn primary">Найти</button>
+        </form>
 
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
+        <section class="bookmarks" aria-labelledby="bookmarksTitle">
+          <div class="bookmarks-header">
+            <h2 id="bookmarksTitle">Ярлыки</h2>
+            <button id="addBookmark" class="btn">＋ Добавить</button>
+          </div>
+          <div id="bookmarksGrid" class="grid" role="list"></div>
+        </section>
+      </main>
 
-                if (code) {
-                    // Проверяем, что ссылка ведёт на MP3
-                    if (code.data.endsWith('.mp3')) {
-                        statusText.textContent = "QR-код распознан! Загружаем аудио...";
-                        audioPlayer.src = code.data;
-                        audioPlayer.style.display = 'block';
-                        audioPlayer.play();
+      <input id="bgInput" type="file" accept="image/*" hidden />
 
-                        // Приостанавливаем сканирование на 5 секунд
-                        isScanning = false;
-                        setTimeout(() => {
-                            isScanning = true;
-                            statusText.textContent = "Сканирование...";
-                        }, 5000); // 5 секунд задержки
-                    } else {
-                        statusText.textContent = "Ссылка в QR-коде не ведёт на MP3 файл.";
-                    }
-                } else {
-                    statusText.textContent = "Сканирование...";
-                }
-            }
-            requestAnimationFrame(tick);
-        }
+      <dialog id="bookmarkDialog">
+        <form method="dialog" id="bookmarkForm" class="dialog-form">
+          <h3 id="dialogTitle">Ярлык</h3>
+          <input type="hidden" id="bookmarkId" />
+          <label>
+            <span>Название</span>
+            <input id="bookmarkTitle" type="text" required placeholder="Например: Новости" />
+          </label>
+          <label>
+            <span>URL</span>
+            <input id="bookmarkUrl" type="url" required placeholder="https://example.com" />
+          </label>
+          <div class="dialog-actions">
+            <button id="deleteBookmark" type="button" class="btn danger" style="margin-right:auto; display:none">Удалить</button>
+            <button value="cancel" class="btn">Отмена</button>
+            <button id="saveBookmark" value="default" class="btn primary">Сохранить</button>
+          </div>
+        </form>
+      </dialog>
+    </div>
 
-        // Инициализация
-        async function init() {
-            try {
-                await getCameras(); // Получаем список камер
-                startCamera(); // Запускаем камеру по умолчанию
-            } catch (err) {
-                statusText.textContent = "Ошибка инициализации: " + err.message;
-            }
-        }
-
-        // Запуск инициализации
-        init();
-    </script>
-</body>
+    <script src="./script.js" defer></script>
+  </body>
 </html>
