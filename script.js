@@ -166,12 +166,7 @@
       title.className = 'title';
       title.textContent = bm.title;
 
-      const url = document.createElement('div');
-      url.className = 'url';
-      url.textContent = bm.url;
-
       link.appendChild(title);
-      link.appendChild(url);
 
       const favicon = document.createElement('div');
       favicon.className = 'favicon';
