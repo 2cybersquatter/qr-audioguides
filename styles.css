@@ -8,6 +8,8 @@
   --primary-contrast: #ffffff;
   --card-bg: #ffffff;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --danger: #ef4444;
+  --danger-contrast: #ffffff;
 }
 
 html[data-theme="dark"] {
@@ -20,6 +22,8 @@ html[data-theme="dark"] {
   --primary-contrast: #0b0f17;
   --card-bg: #0b1220;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35);
+  --danger: #ef4444;
+  --danger-contrast: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -67,6 +71,7 @@ body {
 .btn:hover { filter: brightness(0.98); }
 .btn:active { transform: translateY(1px); }
 .btn.primary { background: var(--primary); color: var(--primary-contrast); border-color: transparent; }
+.btn.danger { background: var(--danger); color: var(--danger-contrast); border-color: transparent; }
 
 .select-wrap select, .search input {
   appearance: none;
@@ -115,16 +120,18 @@ h2 { font-size: 1.1rem; margin: 0; font-weight: 600; }
 
 .card {
   display: grid;
-  grid-template-columns: 42px 1fr auto;
+  grid-template-columns: 42px 1fr;
   grid-template-rows: auto auto;
   column-gap: 10px;
   row-gap: 4px;
   align-items: center;
   padding: 12px;
+  padding-right: 52px; /* space for edit button */
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--card-bg);
   box-shadow: var(--shadow);
+  position: relative;
 }
 .card .favicon {
   grid-row: span 2;
@@ -136,10 +143,27 @@ h2 { font-size: 1.1rem; margin: 0; font-weight: 600; }
 }
 .card .title { font-weight: 600; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .card .url { color: var(--text-muted); font-size: 0.85rem; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.card .actions { display: flex; gap: 6px; }
+.card .actions { display: none; }
 .card .actions .icon-btn { border: 1px solid var(--border); background: var(--bg-muted); color: var(--text); border-radius: 8px; padding: 6px; cursor: pointer; }
 .card a { text-decoration: none; color: inherit; }
 .card a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 6px; }
+.card .edit-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 1;
+}
+.card .edit-btn:active { transform: translateY(1px); }
 
 /* Dialog */
 #bookmarkDialog::backdrop { background: rgba(0,0,0,0.35); }

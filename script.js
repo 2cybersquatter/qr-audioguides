@@ -62,6 +62,7 @@
     setBackground: document.getElementById('setBackground'),
     clearBackground: document.getElementById('clearBackground'),
     bgInput: document.getElementById('bgInput'),
+    deleteBookmark: document.getElementById('deleteBookmark'),
   };
 
   let state = loadSettings();
@@ -86,6 +87,7 @@
     els.setBackground.addEventListener('click', () => els.bgInput.click());
     els.clearBackground.addEventListener('click', onClearBackground);
     els.bgInput.addEventListener('change', onBackgroundSelected);
+    els.deleteBookmark.addEventListener('click', onDeleteInsideDialog);
   }
 
   function startClock() {
@@ -186,26 +188,16 @@
         favicon.textContent = '🔖';
       }
 
-      const actions = document.createElement('div');
-      actions.className = 'actions';
       const editBtn = document.createElement('button');
-      editBtn.className = 'icon-btn';
+      editBtn.className = 'edit-btn';
       editBtn.title = 'Редактировать';
+      editBtn.setAttribute('aria-label', 'Редактировать ярлык');
       editBtn.textContent = '✏️';
-      editBtn.addEventListener('click', () => openBookmarkDialog(bm));
-
-      const delBtn = document.createElement('button');
-      delBtn.className = 'icon-btn';
-      delBtn.title = 'Удалить';
-      delBtn.textContent = '🗑️';
-      delBtn.addEventListener('click', () => deleteBookmark(bm.id));
-
-      actions.appendChild(editBtn);
-      actions.appendChild(delBtn);
+      editBtn.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); openBookmarkDialog(bm); });
 
       card.appendChild(favicon);
       card.appendChild(link);
-      card.appendChild(actions);
+      card.appendChild(editBtn);
 
       els.bookmarksGrid.appendChild(card);
     });
@@ -227,14 +219,15 @@
       els.bookmarkId.value = existing.id;
       els.bookmarkTitle.value = existing.title;
       els.bookmarkUrl.value = existing.url;
+      if (els.deleteBookmark) els.deleteBookmark.style.display = '';
     } else {
       els.dialogTitle.textContent = 'Новый ярлык';
       els.bookmarkId.value = '';
+      if (els.deleteBookmark) els.deleteBookmark.style.display = 'none';
     }
     if (typeof els.dialog.showModal === 'function') {
       els.dialog.showModal();
     } else {
-      // Fallback
       els.dialog.setAttribute('open', '');
     }
   }
@@ -345,5 +338,13 @@
     } else {
       document.body.style.backgroundImage = '';
     }
+  }
+
+  function onDeleteInsideDialog() {
+    const id = els.bookmarkId.value;
+    if (!id) return;
+    if (!confirm('Удалить ярлык?')) return;
+    deleteBookmark(id);
+    closeDialog();
   }
 })();
